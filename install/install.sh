@@ -1,10 +1,5 @@
 #!/bin/bash
 
-DAEMON=/usr/local/bin/gearman-manager
-INIT_D=/etc/init.d/gearman-manager
-INSTALL_DIR=/usr/local/share/gearman-manager
-CONFIG_DIR=/etc/gearman-manager
-
 # we're going to be mucking about, so we need to be root/sudo'd
 if [ "$(id -u)" != "0" ]; then
    echo "This script must be run as root" 1>&2
@@ -15,13 +10,28 @@ fi
 WORKING_DIR=$(dirname $(readlink -f $0))
 
 # determine if & which (supported) distro we're running
-echo "Detecting linux distro as redhat- or debian-compatible"
+echo "Detecting OS"
+
 if [ -f /etc/redhat-release ]; then
     DISTRO="rhel"
+	DAEMON=/usr/local/bin/gearman-manager
+	INIT_D=/etc/init.d/gearman-manager
+	INSTALL_DIR=/usr/local/share/gearman-manager
+	CONFIG_DIR=/etc/gearman-manager
 elif [ -f /etc/debian_version ]; then
     DISTRO="deb"
+	DAEMON=/usr/local/bin/gearman-manager
+	INIT_D=/etc/init.d/gearman-manager
+	INSTALL_DIR=/usr/local/share/gearman-manager
+	CONFIG_DIR=/etc/gearman-manager
+elif [ `uname | grep FreeBSD` ]; then
+	DISTRO='freebsd'
+	DAEMON=/usr/local/bin/gearman-manager
+	INIT_D=/usr/local/etc/rc.d/gearman-manager
+	INSTALL_DIR=/usr/local/share/gearman-manager
+	CONFIG_DIR=/usr/local/etc/gearman-manager
 else
-    echo "Only Redhat Enterprise (RHEL) or Debian systems currently supported"
+    echo "Only Redhat Enterprise (RHEL), Debian, or FreeBSD systems are currently supported"
     exit 1
 fi
 
