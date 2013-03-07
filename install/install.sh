@@ -18,18 +18,21 @@ if [ -f /etc/redhat-release ]; then
 	INIT_D=/etc/init.d/gearman-manager
 	INSTALL_DIR=/usr/local/share/gearman-manager
 	CONFIG_DIR=/etc/gearman-manager
+	PIDDIR=/var/run/gearman
 elif [ -f /etc/debian_version ]; then
     DISTRO="deb"
 	DAEMON=/usr/local/bin/gearman-manager
 	INIT_D=/etc/init.d/gearman-manager
 	INSTALL_DIR=/usr/local/share/gearman-manager
 	CONFIG_DIR=/etc/gearman-manager
+	PIDDIR=/var/run/gearman
 elif [ `uname | grep FreeBSD` ]; then
 	DISTRO='freebsd'
-	DAEMON=/usr/local/bin/gearman-manager
-	INIT_D=/usr/local/etc/rc.d/gearman-manager
-	INSTALL_DIR=/usr/local/share/gearman-manager
-	CONFIG_DIR=/usr/local/etc/gearman-manager
+	DAEMON=/usr/local/bin/gearman_manager
+	INIT_D=/usr/local/etc/rc.d/gearman_manager
+	INSTALL_DIR=/usr/local/share/gearman_manager
+	CONFIG_DIR=/usr/local/etc/gearman_manager
+	PIDDIR=/var/run/gearman_manager
 else
     echo "Only Redhat Enterprise (RHEL), Debian, or FreeBSD systems are currently supported"
     exit 1
@@ -76,7 +79,7 @@ ln -fs ${INSTALL_DIR}/${PHPLIB}-manager.php ${DAEMON}
 echo "Installing executable to ${DAEMON}"
 
 # create config folders
-mkdir -p /etc/gearman-manager/workers
+mkdir -p ${CONFIG_DIR}/workers
 cp ${WORKING_DIR}/config.dist.ini ${CONFIG_DIR}/config.ini
 echo "Installing configs to ${CONFIG_DIR}"
 
@@ -84,6 +87,9 @@ echo "Installing configs to ${CONFIG_DIR}"
 mv ${WORKING_DIR}/${DISTRO}.build.sh ${INIT_D}
 chmod +x ${INIT_D}
 echo "Installing init script to ${INIT_D}"
+
+# create pid directory
+mkdir -p ${PIDDIR}
 
 echo
 echo "Install ok!  Run ${INIT_D} to start and stop"
