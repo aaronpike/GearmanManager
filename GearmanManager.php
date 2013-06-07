@@ -295,7 +295,8 @@ abstract class GearmanManager {
             if($exited) {
                 $worker = $this->children[$exited];
                 unset($this->children[$exited]);
-                $this->log("Child $exited exited ($worker)", GearmanManager::LOG_LEVEL_PROC_INFO);
+                $code = pcntl_wexitstatus($status);
+                $this->log("Child $exited exited with error code of $code ($worker)", GearmanManager::LOG_LEVEL_PROC_INFO);
                 if(!$this->stop_work){
                     $this->start_worker($worker);
                 }
@@ -382,6 +383,10 @@ abstract class GearmanManager {
 
         if (isset($opts['D'])) {
             $this->config['count'] = (int)$opts['D'];
+        }
+
+        if (isset($opts['t'])) {
+            $this->config['timeout'] = $opts['t'];
         }
 
         if (isset($opts['h'])) {
@@ -567,7 +572,7 @@ abstract class GearmanManager {
 
         $this->log("Loading configuration from $file");
 
-        if(substr($file, -4) == ".php"){
+        if (substr($file, -4) == ".php"){
 
             require $file;
 
@@ -577,7 +582,7 @@ abstract class GearmanManager {
 
         }
 
-        if(empty($gearman_config)){
+        if (empty($gearman_config)){
             $this->show_help("No configuration found in $file");
         }
 
@@ -853,6 +858,16 @@ abstract class GearmanManager {
             $worker_list = array($worker);
         }
 
+        $timeouts = array();
+        $default_timeout = ((isset($this->config['timeout'])) ?
+            (int) $this->config['timeout'] : null);
+
+        // build up the list of worker timeouts
+        foreach ($worker_list as $worker) {
+            $timeouts[$worker] = ((isset($this->config['functions'][$worker]['timeout'])) ?
+                    (int) $this->config['functions'][$worker]['timeout'] : $default_timeout);
+        }
+
         $pid = pcntl_fork();
 
         switch($pid) {
@@ -874,7 +889,7 @@ abstract class GearmanManager {
                     uasort($worker_list, array($this, "sort_priority"));
                 }
 
-                $this->start_lib_worker($worker_list);
+                $this->start_lib_worker($worker_list, $timeouts);
 
                 $this->log("Child exiting", GearmanManager::LOG_LEVEL_WORKER_INFO);
 
@@ -1109,6 +1124,7 @@ abstract class GearmanManager {
         echo "  -v             Increase verbosity level by one\n";
         echo "  -w DIR         Directory where workers are located, defaults to ./workers. If you are using PECL, you can provide multiple directories separated by a comma.\n";
         echo "  -r NUMBER      Maximum job iterations per worker\n";
+        echo "  -t SECONDS     Maximum number of seconds gearmand server should wait for a worker to complete work before timing out and reissuing work to another worker.\n";
         echo "  -x SECONDS     Maximum seconds for a worker to live\n";
         echo "  -Z             Parse the command line and config file then dump it to the screen and exit.\n";
         echo "\n";

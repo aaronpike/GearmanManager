@@ -23,10 +23,11 @@ class GearmanPeclManager extends GearmanManager {
      * Starts a worker for the PECL library
      *
      * @param   array   $worker_list    List of worker functions to add
+     * @param   array   $timeouts       list of worker timeouts to pass to server
      * @return  void
      *
      */
-    protected function start_lib_worker($worker_list) {
+    protected function start_lib_worker($worker_list, $timeouts = array()) {
 
         $thisWorker = new GearmanWorker();
 
@@ -40,8 +41,9 @@ class GearmanPeclManager extends GearmanManager {
         }
 
         foreach($worker_list as $w){
-            $this->log("Adding job $w", GearmanManager::LOG_LEVEL_WORKER_INFO);
-            $thisWorker->addFunction($w, array($this, "do_job"), $this);
+            $timeout = (isset($timeouts[$w]) ? $timeouts[$w] : null);
+            $this->log("Adding job $w ; timeout: " . $timeout, GearmanManager::LOG_LEVEL_WORKER_INFO);
+            $thisWorker->addFunction($w, array($this, "do_job"), $this, $timeout);
         }
 
         $start = time();
@@ -105,7 +107,7 @@ class GearmanPeclManager extends GearmanManager {
             $func = $job_name;
         }
 
-        if(empty($objects[$job_name]) && !function_exists($func) && !class_exists($func)){
+        if(empty($objects[$job_name]) && !function_exists($func) && !class_exists($func, false)){
 
             if(!isset($this->functions[$job_name])){
                 $this->log("Function $func is not a registered job name");
