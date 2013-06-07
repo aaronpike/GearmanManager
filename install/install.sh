@@ -90,6 +90,7 @@ echo "Installing init script to ${INIT_D}"
 
 # create pid directory
 mkdir -p ${PIDDIR}
+chown gearmand:geamand /var/run/gearman_manager
 
 echo
 echo "Install ok!  Run ${INIT_D} to start and stop"
